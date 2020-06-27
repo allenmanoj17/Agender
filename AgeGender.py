@@ -1,6 +1,5 @@
 import cv2 as cv
 import math
-import time
 import argparse
 
 def getFaceBox(net, frame, conf_threshold=0.7):
@@ -24,8 +23,8 @@ def getFaceBox(net, frame, conf_threshold=0.7):
     return frameOpencvDnn, bboxes
 
 
-parser = argparse.ArgumentParser(description='Use this script to run age and gender recognition using OpenCV.')
-parser.add_argument('--input', help='Path to input image or video file. Skip this argument to capture frames from a camera.')
+parser = argparse.ArgumentParser()
+parser.add_argument('--input')
 
 args = parser.parse_args()
 
@@ -52,7 +51,6 @@ cap = cv.VideoCapture(args.input if args.input else 0)
 padding = 20
 while cv.waitKey(1) < 0:
 
-    t = time.time()
     hasFrame, frame = cap.read()
     if not hasFrame:
         cv.waitKey()
@@ -64,23 +62,22 @@ while cv.waitKey(1) < 0:
         continue
 
     for bbox in bboxes:
-        face = frame[max(0,bbox[1]-padding):min(bbox[3]+padding,frame.shape[0]-1),max(0,bbox[0]-padding):min(bbox[2]+padding, frame.shape[1]-1)]
+        face = frame[max(0,bbox[1]-padding):
+        min(bbox[3]+padding,frame.shape[0]-1),max(0,bbox[0]-padding):
+        min(bbox[2]+padding, frame.shape[1]-1)]
 
         blob = cv.dnn.blobFromImage(face, 1.0, (227, 227), MODEL_MEAN_VALUES, swapRB=False)
         genderNet.setInput(blob)
         genderPreds = genderNet.forward()
         gender = genderList[genderPreds[0].argmax()]
 
-        print("Gender : {}, conf = {:.3f}".format(gender, genderPreds[0].max()))
+        print("Gender : {}".format(gender))
 
         ageNet.setInput(blob)
         agePreds = ageNet.forward()
         age = ageList[agePreds[0].argmax()]
-        print("Age Output : {}".format(agePreds))
-        print("Age : {}, conf = {:.3f}".format(age, agePreds[0].max()))
+        print("Age : {} years".format((age[1:-1]) ))
 
         label = "{},{}".format(gender, age)
         cv.putText(frameFace, label, (bbox[0], bbox[1]-10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 40, 10), 1, cv.LINE_AA)
-        cv.imshow("Age Gender Demo", frameFace)
-
-    print("time : {:.3f}".format(time.time() - t))
+        cv.imshow("Demo of Agender", frameFace)
